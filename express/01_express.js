@@ -1,10 +1,20 @@
 const express = require("express");
 const data = require("./movies.json");
-
+const morgan = require("morgan");
 const app = express();
+const logger = function (req, res, next) {
+  console.log("logger middleware called");
+  next();
+};
+app.use((req, res, next) => {
+  req.requestedAt = new Date().toISOString();
+  next();
+});
 app.use(express.json());
+app.use(morgan());
+app.use(logger);
 app.get("/api/movies/", (req, res) => {
-  res.json(data);
+  res.json({ requestedAt: req.requestedAt, data: data });
 });
 
 app.get("/api/movies/:id/:name?", (req, res) => {
@@ -53,12 +63,13 @@ app.patch("/api/movies/:id", (req, res) => {
 app.delete("/api/movies/:id", (req, res) => {
   let id = req.params.id;
   movieToDelete = data.find((el) => el.id === id * 1);
-   if (!movieToDelete) {
-     res.status(404).send("there is no movies to update" + id);
-   }
-  data.splice(id,1)
+  if (!movieToDelete) {
+    res.status(404).send("there is no movies to update" + id);
+  }
+  data.splice(id, 1);
   res.send(movieToDelete);
 });
+
 app.listen(8000, () => {
   console.log("server started@8000");
 });
